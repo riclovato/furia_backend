@@ -1,0 +1,44 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# ---- Virtual environment ----
+venv/
+.env/
+.env.*
+*.env
+
+# ---- VSCode ----
+.vscode/
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+
+# ---- Logs ----
+*.log
+
+# ---- Bytecode ----
+*.prof
+
+# ---- Docker ----
+*.pid
+docker-compose.override.yml
+
+# ---- FastAPI / Uvicorn ----
+*.sqlite3
+
+# ---- Local database files ----
+instance/
+*.db
+
+# ---- Pytest ----
+.pytest_cache/
+.coverage
+
+# ---- Build / Dist ----
+build/
+dist/
