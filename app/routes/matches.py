@@ -1,23 +1,47 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from typing import List
+from app.database import get_db
+from app.models import Match
+from app.schemas import MatchList, MatchCreate
+from datetime import datetime
 
 router = APIRouter(prefix="/matches", tags=["Matches"])
 
-@router.get("/")
-async def get_matches():
-    # Por enquanto, mock (pode ligar ao seu scraping depois)
-    matches = [
-        {
-            "team1": "FURIA",
-            "team2": "G2",
-            "time": "2025-11-29 18:00 UTC",
-            "event": "BLAST Premier"
-        },
-        {
-            "team1": "FURIA",
-            "team2": "NAVI",
-            "time": "2025-12-03 16:00 UTC",
-            "event": "IEM Global"
-        }
-    ]
+@router.post("/save")
+def save_matches(payload: MatchList, db: Session = Depends(get_db)):
+    saved = []
+    for m in payload.matches:
+        # Verifica se já existe pela match_id
+        existing = db.query(Match).filter_by(match_id=m.match_id).first()
+        if existing:
+            # Atualiza campos caso tenham mudado (ex.: horário)
+            if m.opponent:
+                existing.opponent = m.opponent
+            if m.event is not None:
+                existing.event = m.event
+            if m.link is not None:
+                existing.link = m.link
+            if m.format is not None:
+                existing.format = m.format
+            if m.start_time is not None:
+                existing.start_time = m.start_time
+            db.commit()
+            db.refresh(existing)
+            saved.append(existing)
+            continue
 
-    return {"matches": matches}
+        new = Match(
+            match_id=m.match_id,
+            opponent=m.opponent,
+            event=m.event,
+            start_time=m.start_time,
+            link=m.link,
+            format=m.format
+        )
+        db.add(new)
+        db.commit()
+        db.refresh(new)
+        saved.append(new)
+
+    return {"message": "matches saved", "count": len(saved)}
