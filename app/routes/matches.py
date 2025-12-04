@@ -1,47 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
 from app.database import get_db
-from app.models import Match
-from app.schemas import MatchList, MatchCreate
-from datetime import datetime
+from app.schemas import MatchCreate
+from app.crud.matches import (
+    create_match,
+    get_future_matches,
+    get_match_by_match_id
+)
 
 router = APIRouter(prefix="/matches", tags=["Matches"])
 
-@router.post("/save")
-def save_matches(payload: MatchList, db: Session = Depends(get_db)):
-    saved = []
-    for m in payload.matches:
-        # Verifica se já existe pela match_id
-        existing = db.query(Match).filter_by(match_id=m.match_id).first()
-        if existing:
-            # Atualiza campos caso tenham mudado (ex.: horário)
-            if m.opponent:
-                existing.opponent = m.opponent
-            if m.event is not None:
-                existing.event = m.event
-            if m.link is not None:
-                existing.link = m.link
-            if m.format is not None:
-                existing.format = m.format
-            if m.start_time is not None:
-                existing.start_time = m.start_time
-            db.commit()
-            db.refresh(existing)
-            saved.append(existing)
-            continue
 
-        new = Match(
-            match_id=m.match_id,
-            opponent=m.opponent,
-            event=m.event,
-            start_time=m.start_time,
-            link=m.link,
-            format=m.format
-        )
-        db.add(new)
-        db.commit()
-        db.refresh(new)
-        saved.append(new)
+@router.post("/")
+def add_match(data: MatchCreate, db: Session = Depends(get_db)):
+    existing = get_match_by_match_id(db, data.match_id)
 
-    return {"message": "matches saved", "count": len(saved)}
+    if existing:
+        return {"message": "Match already exists", "match": existing}
+
+    match = create_match(db, data)
+    return {"message": "Match added", "match": match}
+
+
+@router.get("/future")
+def list_future_matches(db: Session = Depends(get_db)):
+    matches = get_future_matches(db)
+    return {"matches": matches}
