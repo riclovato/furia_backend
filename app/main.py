@@ -4,7 +4,7 @@ from app.database import engine, Base
 from app.routes import webhook
 from app.routes import status
 from app.routes import alerts
-from flask import flask
+from flask import Flask
 
 Base.metadata.create_all(bind=engine)
 flask_app = Flask(__name__)
