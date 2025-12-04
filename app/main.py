@@ -4,8 +4,8 @@ from app.database import engine, Base
 from app.routes import webhook
 from app.routes import status
 from app.routes import alerts
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.tasks.notifications import check_matches_and_notify
+from app.notifier import setup_notifier
 
 
 Base.metadata.create_all(bind=engine)
@@ -27,6 +27,5 @@ app.include_router(webhook.router)
 app.include_router(status.router)
 app.include_router(alerts.router)
 
-scheduler = AsyncIOScheduler()
-scheduler.add_job(check_matches_and_notify, "interval", minutes=1)
-scheduler.start()
+
+setup_notifier(app)
